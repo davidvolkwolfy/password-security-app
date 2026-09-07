@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <title>Rezultati analize - SRC d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .big-score { font-size: 52px; font-weight: bold; text-align: center; margin: 25px 0; text-transform: uppercase; }
+        .pwd-view { background: #eee; padding: 5px 10px; font-family: monospace; border-radius: 5px; display: inline-block; margin-bottom: 20px; }
+        
+        /* Tabela za čas razbitja */
+        .crack-table-container { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #555; font-size: 14px; text-transform: uppercase; }
+        .time-val { font-weight: bold; font-size: 18px; }
+        .critical-row { color: #b71c1c; font-weight: bold; }
+
+        .condition-box { padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .fulfilled { background-color: #f1f8e9; border-left: 10px solid #4caf50; }
+        .unfulfilled { background-color: #fffde7; border-left: 10px solid #fbc02d; }
+        .danger-red { background-color: #ffebee; border-left: 10px solid #f44336; }
+
+        .tips-container { background-color: #e3f2fd; padding: 20px; border-radius: 12px; border: 1px solid #2196f3; margin-top: 30px; }
+        .tips-container h3 { color: #0d47a1; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% set errors = error_count %}
+        
+        <div class="big-score" id="scoreText">
+            {% if errors == 0 %} ZELO MOČNO 💪
+            {% elif errors == 1 %} MOČNO 🟢
+            {% elif errors == 2 %} SREDNJE 🟡
+            {% elif errors == 3 %} ŠIBKO 🟠
+            {% else %} ZELO ŠIBKO 🔴 {% endif %}
+        </div>
+
+        <div style="text-align: center;">
+            <p>Analizirano geslo: <span class="pwd-view" id="userPwd">{{ password }}</span></p>
+        </div>
+
+        <div class="crack-table-container">
+            <h3>⏱️ Predviden čas za razbitje gesla</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenarij napada</th>
+                        <th>Čas razbitja</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🌐 Online napad (brez omejitev)</td>
+                        <td class="time-val">{{ data.crack_times_display.online_no_throttling_10_per_second }}</td>
+                    </tr>
+                    <tr>
+                        <td>💻 Offline napad (navaden PC)</td>
+                        <td class="time-val">{{ data.crack_times_display.offline_slow_hashing_1e4_per_second }}</td>
+                    </tr>
+                    <tr class="critical-row">
+                        <td>🚀 Offline napad (profesionalna postaja)</td>
+                        <td class="time-val">{{ data.crack_times_display.offline_fast_hashing_1e10_per_second }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 13px; color: #666; margin-top: 15px;">
+                * Profesionalna postaja uporablja več grafičnih procesorjev (GPU) za izjemno hitro ugibanje zgoščenih vrednosti.
+            </p>
+        </div>
+
+        <div class="condition-box fulfilled">
+            <h3>✅ 1. Izpolnjeni varnostni pogoji:</h3>
+            <ul>{% for item in fulfilled %}<li>{{ item }}</li>{% endfor %}</ul>
+        </div>
+
+        <div class="condition-box {% if errors > 0 %}danger-red{% else %}fulfilled{% endif %}">
+            <h3>❌ 2. Neizpolnjeni pogoji:</h3>
+            <ul>
+                {% for item in unfulfilled %}<li>{{ item }}</li>{% endfor %}
+                {% if errors == 0 %}<li>Vsi tehnični varnostni kriteriji so bili doseženi!</li>{% endif %}
+            </ul>
+        </div>
+
+        <div class="tips-container">
+            <h3>💡 Splošna priporočila za varno spletno izkušnjo:</h3>
+            <ul>
+                <li><b>Uporabljajte upravljalnik gesel:</b> Bitwarden vam omogočajo uporabo unikatnih in kompleksnih gesel za vsako storitev.</li>
+                <li><b>Geslo je samo vaše:</b> V primeru, da vas nekdo prosi za geslo je to prevara!</li>
+                <li><b>Ne uporabljajte enakih gesel:</b> V primeru vdora so vsi računi kjer imate enako geslo ogroženi.</li>
+                <li><b>BREZ osebnih podatkov:</b> Ne uporabljajte imen, priimekov, rojstnega datuma, kraja itd.</li>
+                <li><b>Vključite 2FA:</b> Dvofaktorska avtentikacija doda nujno plast varnosti, tudi če je vaše geslo razkrito.</li>
+                
+            </ul>
+        </div>
+
+        <button onclick="window.location.href='/'" style="margin-top: 30px;">🔙 Nazaj na vnos</button>
+    </div>
+
+    <script>
+        const errorCount = parseInt("{{ errors }}");
+        const colors = ['#2e7d32', '#4caf50', '#fbc02d', '#ff9800', '#f44336'];
+        const colorIndex = Math.min(errorCount, 4);
+        document.getElementById('scoreText').style.color = colors[colorIndex];
+
+        setTimeout(function() {
+            const pwd = document.getElementById('userPwd').innerText;
+            alert("⚠️ IZOBRAŽEVALNO OPOZORILO SRC d.o.o.\n\nUPS, vaše geslo '" + pwd + "' je bilo pravkar zabeleženo in poslano napadalcu. Hmm, ampak pisalo je, da se ne beleži? Res je, nasedli ste taktiki socialnega inžiniringa!:)\n\nNamen tega orodja je ozaveščanje: Nikoli ne vpisujte svojih pravih gesel v spletne obrazce, ki jim ne zaupate 100%!");
+        }, 10000);
+    </script>
+</body>
+</html>
